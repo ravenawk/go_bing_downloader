@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type BingResponse struct {
@@ -21,6 +22,8 @@ type Image struct {
 	URL       string `json:"url"`
 	Title     string `json:"title"`
 }
+
+var imageTitlere = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 
 const bingURL string = "https://www.bing.com"
 
@@ -50,8 +53,8 @@ func main() {
 }
 
 func fetchURLBody(imageURL string) ([]byte, error) {
-	// TODO: http.Get has no timeout, so a hung server would hang your program forever. http.Client{Timeout: ...} is the usual fix.
-	response, err := http.Get(imageURL)
+	client := &http.Client{Timeout: 10 * time.Second}
+	response, err := client.Get(imageURL)
 
 	// log.Fatal shouldn't be used in a non-main function it should return the error to main
 	if err != nil {
@@ -89,10 +92,8 @@ func transformJSON(imageInfo []byte) (Image, error) {
 }
 
 func sanitizeTitle(title string) string {
-	// TODO: sanitizeTitle compiles the regex fresh every call; since it's a fixed pattern, it's a common Go idiom to hoist it to a package-level var with regexp.MustCompile.
-	re := regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 	cleanTitle := strings.ReplaceAll(title, " ", "_")
-	return re.ReplaceAllString(cleanTitle, "")
+	return imageTitlere.ReplaceAllString(cleanTitle, "")
 }
 
 func saveImage(image []byte, title string, startdate string) error {
