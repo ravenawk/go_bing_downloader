@@ -28,9 +28,10 @@ var imageTitlere = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 const bingURL string = "https://www.bing.com"
 
 func main() {
+	httpClient := &http.Client{Timeout: 10 * time.Second}
 	imageMetadataPath := "/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US"
 	imageMetadataURL := bingURL + imageMetadataPath
-	imageJSON, err := fetchURLBody(imageMetadataURL)
+	imageJSON, err := fetchURLBody(httpClient, imageMetadataURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	imageBytes, err := fetchURLBody(bingURL + imageInfo.URL)
+	imageBytes, err := fetchURLBody(httpClient, bingURL+imageInfo.URL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,8 +53,7 @@ func main() {
 
 }
 
-func fetchURLBody(imageURL string) ([]byte, error) {
-	client := &http.Client{Timeout: 10 * time.Second}
+func fetchURLBody(client *http.Client, imageURL string) ([]byte, error) {
 	response, err := client.Get(imageURL)
 
 	// log.Fatal shouldn't be used in a non-main function it should return the error to main
